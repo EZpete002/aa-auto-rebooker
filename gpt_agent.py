@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import openai
+import time
 
 load_dotenv()
 
@@ -15,23 +16,23 @@ if not ASSISTANT_ID:
 openai.api_key = OPENAI_API_KEY
 
 def ask_gpt(trip_info: str) -> str:
-    # Create a new thread for each query
+    # Create a new thread
     thread = openai.beta.threads.create()
-    
-    # Add the trip info as a message
+
+    # Add the reservation data
     openai.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
         content=f"Here’s the latest scraped reservation info:\n\n{trip_info}"
     )
-    
-    # Run the Assistant
+
+    # Start a run with your custom assistant
     run = openai.beta.threads.runs.create(
         thread_id=thread.id,
         assistant_id=ASSISTANT_ID
     )
-    
-    # Poll until it’s complete
+
+    # Poll until done
     while True:
         run_status = openai.beta.threads.runs.retrieve(
             thread_id=thread.id,
@@ -39,7 +40,12 @@ def ask_gpt(trip_info: str) -> str:
         )
         if run_status.status in ["completed", "failed", "cancelled"]:
             break
-    
-    # Get messages
+        time.sleep(1)
+
+    # Get the latest assistant message
     messages = openai.beta.threads.messages.list(thread_id=thread.id)
-    return messages.data[0].content[0].text.value
+    for m in messages.data:
+        if m.role == "assistant":
+            return m.content[0].text.value
+
+    return "No response from assistant."
