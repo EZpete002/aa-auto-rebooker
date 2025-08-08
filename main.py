@@ -1,11 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
-from scraper import scrape_passenger_info
+from security import verify_shared_secret
 from gpt_agent import ask_gpt
+from scraper import scrape_passenger_info  # make sure this is async
 
-app = FastAPI()
+app = FastAPI(title="AA Auto Rebooker")
 
-class RebookRequest(BaseModel):
+class RebookBody(BaseModel):
     recordLocator: str
     firstName: str
     lastName: str
@@ -13,15 +14,22 @@ class RebookRequest(BaseModel):
     dobDay: str
     dobYear: str
 
+@app.get("/health")
+def health():
+    return {"ok": True}
+
 @app.post("/rebook")
-async def rebook(request: RebookRequest):
+async def rebook(body: RebookBody, authorization: str | None = Header(None)):
+    verify_shared_secret(authorization)
+
     trip_info = await scrape_passenger_info(
-        request.recordLocator,
-        request.firstName,
-        request.lastName,
-        request.dobMonth,
-        request.dobDay,
-        request.dobYear,
+        body.recordLocator,
+        body.firstName,
+        body.lastName,
+        body.dobMonth,
+        body.dobDay,
+        body.dobYear
     )
+
     gpt_response = ask_gpt(trip_info)
     return {"result": gpt_response}
