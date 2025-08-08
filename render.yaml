@@ -5,9 +5,5 @@ services:
     plan: starter
     autoDeploy: true
     envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: ASSISTANT_ID
-        sync: false
       - key: SHARED_SECRET
         sync: false
