@@ -14,6 +14,7 @@ class LookupBody(BaseModel):
     dobMonth: str
     dobDay: str
     dobYear: str
+    debug: bool = False  # Optional debug flag
 
 @app.get("/health")
 def health():
@@ -21,7 +22,6 @@ def health():
 
 @app.post("/lookup")
 async def lookup(body: LookupBody, authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
-    # Require bearer token so only your GPT Action can call this
     verify_shared_secret(authorization)
     try:
         data = await scrape_passenger_info(
@@ -30,9 +30,9 @@ async def lookup(body: LookupBody, authorization: Optional[str] = Header(None)) 
             body.lastName,
             body.dobMonth,
             body.dobDay,
-            body.dobYear
+            body.dobYear,
+            debug=body.debug
         )
-        # Return structured JSON only. No formatting here.
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
