@@ -22,7 +22,7 @@ def ask_gpt(trip_info: str) -> str:
     # Add the reservation data
     openai.beta.threads.messages.create(
         thread_id=thread.id,
-        role="user",
+       role="user",
         content=f"Here’s the latest scraped reservation info:\n\n{trip_info}"
     )
 
